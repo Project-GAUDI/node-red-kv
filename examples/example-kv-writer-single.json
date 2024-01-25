@@ -1,0 +1,76 @@
+[
+    {
+        "id": "495c6a42.271cb4",
+        "type": "kv-writer-single",
+        "z": "f11aef64.cd298",
+        "name": "",
+        "ip": "192.168.1.1",
+        "port": "3000",
+        "mode": "WR",
+        "deviceType": "DM",
+        "deviceNo": "200",
+        "dataFormat": "",
+        "x": 360,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "5c9b0fca.5f12a",
+        "type": "inject",
+        "z": "f11aef64.cd298",
+        "name": "入力データ",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"data\":[\"+15025\",\"-05400\",\"200\"]}",
+        "payloadType": "json",
+        "x": 120,
+        "y": 40,
+        "wires": [
+            [
+                "495c6a42.271cb4"
+            ]
+        ]
+    },
+    {
+        "id": "f8d87bda.4550c8",
+        "type": "catch",
+        "z": "f11aef64.cd298",
+        "name": "",
+        "scope": [
+            "495c6a42.271cb4"
+        ],
+        "uncaught": false,
+        "x": 110,
+        "y": 120,
+        "wires": [
+            [
+                "a6766804.c425a8"
+            ]
+        ]
+    },
+    {
+        "id": "a6766804.c425a8",
+        "type": "debug",
+        "z": "f11aef64.cd298",
+        "name": "エラー出力",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "error",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 350,
+        "y": 120,
+        "wires": []
+    }
+]

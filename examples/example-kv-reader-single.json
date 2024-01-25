@@ -1,0 +1,98 @@
+[
+    {
+        "id": "b1ecd3e7.39ae",
+        "type": "kv-reader-single",
+        "z": "6a5ffefd.7ffb",
+        "name": "",
+        "ip": "192.168.1.1",
+        "port": "3000",
+        "mode": "RDS",
+        "deviceType": "DM",
+        "deviceNo": "200",
+        "dataFormat": "L",
+        "readNo": "3",
+        "x": 360,
+        "y": 40,
+        "wires": [
+            [
+                "c7267ad4.8a55f8"
+            ]
+        ]
+    },
+    {
+        "id": "1ce2418f.85207e",
+        "type": "inject",
+        "z": "6a5ffefd.7ffb",
+        "name": "実行トリガー",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 130,
+        "y": 40,
+        "wires": [
+            [
+                "b1ecd3e7.39ae"
+            ]
+        ]
+    },
+    {
+        "id": "c7267ad4.8a55f8",
+        "type": "debug",
+        "z": "6a5ffefd.7ffb",
+        "name": "結果出力",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 580,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "bea044cb.098438",
+        "type": "catch",
+        "z": "6a5ffefd.7ffb",
+        "name": "",
+        "scope": [
+            "b1ecd3e7.39ae"
+        ],
+        "uncaught": false,
+        "x": 110,
+        "y": 120,
+        "wires": [
+            [
+                "35f95a99.c8b776"
+            ]
+        ]
+    },
+    {
+        "id": "35f95a99.c8b776",
+        "type": "debug",
+        "z": "6a5ffefd.7ffb",
+        "name": "エラー出力",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "error",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 350,
+        "y": 120,
+        "wires": []
+    }
+]

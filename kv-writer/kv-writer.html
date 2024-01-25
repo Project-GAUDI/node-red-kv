@@ -1,0 +1,220 @@
+<script type="text/html" data-template-name="kv-writer-single">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> 名前</label>
+        <input type="text" id="node-input-name" style="width:200px">
+    </div>
+    <div class="form-row">
+        <label for="node-input-ip"> IP</label>
+        <input type="text" id="node-input-ip" style="width:200px">
+    </div>
+    <div class="form-row">
+        <label for="node-input-port"> Port</label>
+        <input type="text" id="node-input-port" style="width:200px">
+    </div>
+    <div class="form-row">
+        <label for="node-input-mode"> 書込方式</label>
+        <select name="node-input-mode" id="node-input-mode" style="width:200px">
+            <option value="WR">WR</option>
+            <option value="WRS">WRS</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-deviceType"> デバイス種別</label>
+        <input type="text" id="node-input-deviceType" style="width:200px">
+    </div>
+    <div class="form-row">
+        <label for="node-input-deviceNo"> デバイス番号</label>
+        <input type="text" id="node-input-deviceNo" style="width:200px">
+    </div>
+    <div class="form-row">
+        <label for="node-input-dataFormat"> データ形式</label>
+        <select name="node-input-dataFormat" id="node-input-dataFormat" style="width:200px">
+            <option value="U">.U</option>
+            <option value="S">.S</option>
+            <option value="D">.D</option>
+            <option value="L">.L</option>
+            <option value="H">.H</option>
+            <option value="">指定なし</option>
+        </select>
+    </div>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('kv-writer-single',{
+        category: 'KV',
+        color: '#72cc82',
+        defaults: {
+            name: {value:""},
+            ip: {value:""},
+            port:{value:"",},
+            mode:{value:"WR"},
+            deviceType:{value:""},
+            deviceNo:{value:""},
+            dataFormat:{value:""}
+        },
+        inputs:1,
+        outputs:0,
+        icon: "font-awesome/fa-pencil-square-o",
+        label: function() {
+            return this.name;
+        }
+    });
+</script>
+
+<script type="text/html" data-help-name="kv-writer-single">
+    <p>デバイスへのデータ書込を行います。</p>
+    
+    <h3>入力</h3>
+        <dl class="message-properties">
+            <dt>payload <span class="property-type">オブジェクト</span></dt>
+            <dd> 書込データ</dd>
+        </dl>
+    
+    <h3>出力</h3>
+        <dl class="message-properties">
+            <dd>なし</dd>
+        </dl>
+    
+    <h3>詳細</h3>
+        <p><code>msg.payload</code>には、<code>data</code>をキーとして書込データ本文を格納して下さい。</p>
+        <p>エラー発生時は、catchノードへエラーを送信します。</p>
+</script>
+
+<script type="text/html" data-template-name="kv-writer-multiple">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> 名前</label>
+        <input type="text" id="node-input-name" style="width:200px">
+    </div>
+    <div class="form-row">
+        <label for="node-input-mode"> 書込方式</label>
+        <select name="node-input-mode" id="node-input-mode" style="width:200px">
+            <option value="WR">WR</option>
+            <option value="WRS">WRS</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-deviceType"> デバイス種別</label>
+        <input type="text" id="node-input-deviceType" style="width:200px">
+    </div>
+    <div class="form-row">
+        <label for="node-input-deviceNo"> デバイス番号</label>
+        <input type="text" id="node-input-deviceNo" style="width:200px">
+    </div>
+    <div class="form-row">
+        <label for="node-input-dataFormat"> データ形式</label>
+        <select name="node-input-dataFormat" id="node-input-dataFormat" style="width:200px">
+            <option value="U">.U</option>
+            <option value="S">.S</option>
+            <option value="D">.D</option>
+            <option value="L">.L</option>
+            <option value="H">.H</option>
+            <option value="">指定なし</option>
+        </select>
+    </div>
+    <div class="form-row node-input-target-container-row">
+        <label for="node-input-devices"> デバイス</label>
+        <ol id="node-input-target-container"></ol>
+    </div>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('kv-writer-multiple',{
+        category: 'KV',
+        color: '#72cc82',
+        defaults: {
+            name: {value:""},
+            mode:{value:"WR"},
+            deviceType:{value:""},
+            deviceNo:{value:""},
+            dataFormat:{value:""},
+            targets: {value:[{ip:"", port:""}]}
+        },
+        inputs:1,
+        outputs:0,
+        icon: "font-awesome/fa-pencil-square-o",
+        label: function() {
+            return this.name;
+        },
+        oneditprepare: function() {
+            var inputStyle = "width:150px; margin-right:30px; ";
+            var headerStyle = "display:inline-grid; text-align:center;";
+            $("#node-input-target-container")
+                .editableList({
+                    header: $('<div/>')
+                        .append(
+                            $('<div/>', {style:"width:23px; " + headerStyle}),
+                            $('<div/>', {style:inputStyle + headerStyle}).text("IP"), 
+                            $('<div/>', {style:inputStyle + headerStyle}).text("Port")
+                        ),
+                    addItem: function(container, i, opt) {
+                        var target = opt;
+                        var row = $('<div/>').appendTo(container);
+                        var ip = $('<input/>', 
+                            {
+                                class:"node-input-target-ip", 
+                                type:"text", 
+                                style:inputStyle
+                            }).appendTo(row);
+                        var port = $('<input/>', 
+                            {
+                                class:"node-input-target-port", 
+                                type:"text", 
+                                style:inputStyle
+                            }).appendTo(row);
+                        if (typeof target.ip != "undefined") {
+                            ip.val(target.ip);
+                        }
+                        if (typeof target.ip != "undefined") {
+                            port.val(target.port);
+                        }
+                    },
+                    sortable: true,
+                    removable: true
+                })
+            
+            for (var i = 0; i < this.targets.length; i++) {
+                $("#node-input-target-container").editableList('addItem', this.targets[i]);
+            }
+        },
+        oneditsave: function() {
+            var targets = $("#node-input-target-container").editableList('items');
+            var node = this;
+            node.targets =[];
+            targets.each(function(i) {
+                var target = $(this);
+                var ip = target.find(".node-input-target-ip").val();
+                var port = target.find(".node-input-target-port").val();
+                node.targets.push({ip:ip, port:port});
+            });
+        },
+        oneditresize: function(size) {
+            var height = size.height;
+            var editorRow = $("#dialog-form>div.node-input-target-container-row");
+            var rows = $("#dialog-form>div:not(.node-input-target-container-row)");
+            for (var i = 0; i < rows.length; i++) {
+                height -= $(rows[i]).outerHeight(true);
+            }
+            height -= (parseInt(editorRow.css("marginTop")) + parseInt(editorRow.css("marginBottom")));
+            $("#node-input-target-container").editableList('height', height);
+        }
+    });
+</script>
+
+<script type="text/html" data-help-name="kv-writer-multiple">
+    <p>複数デバイスへのデータ書込を行います。</p>
+    
+    <h3>入力</h3>
+        <dl class="message-properties">
+            <dt>payload <span class="property-type">オブジェクト</span></dt>
+            <dd> 書込データ</dd>
+        </dl>
+    
+    <h3>出力</h3>
+        <dl class="message-properties">
+            <dd>なし</dd>
+        </dl>
+    
+    <h3>詳細</h3>
+        <p><code>msg.payload</code>には、<code>data</code>をキーとして書込データ本文を格納して下さい。</p>
+        <p>エラー発生時は、catchノードへエラーを送信します。</p>
+</script>

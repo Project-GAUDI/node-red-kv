@@ -1,0 +1,104 @@
+[
+    {
+        "id": "af935dfe.cb13",
+        "type": "inject",
+        "z": "23b3a3db.9fef9c",
+        "name": "入力データ",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"data\":[\"+15025\",\"-05400\",\"200\"]}",
+        "payloadType": "json",
+        "x": 100,
+        "y": 60,
+        "wires": [
+            [
+                "af19fc00.562ea"
+            ]
+        ]
+    },
+    {
+        "id": "e0aca550.2aa118",
+        "type": "catch",
+        "z": "23b3a3db.9fef9c",
+        "name": "",
+        "scope": [
+            "af19fc00.562ea"
+        ],
+        "uncaught": false,
+        "x": 90,
+        "y": 140,
+        "wires": [
+            [
+                "b53b7627.ad1908"
+            ]
+        ]
+    },
+    {
+        "id": "4fb7aa9c.7e0d54",
+        "type": "debug",
+        "z": "23b3a3db.9fef9c",
+        "name": "エラー出力",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "error",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 570,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "af19fc00.562ea",
+        "type": "kv-writer-multiple",
+        "z": "23b3a3db.9fef9c",
+        "name": "",
+        "mode": "WR",
+        "deviceType": "DM",
+        "deviceNo": "200",
+        "dataFormat": "",
+        "targets": [
+            {
+                "ip": "192.168.1.1",
+                "port": "3000"
+            },
+            {
+                "ip": "192.168.1.2",
+                "port": "3000"
+            },
+            {
+                "ip": "192.168.1.3",
+                "port": "3000"
+            }
+        ],
+        "x": 350,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "b53b7627.ad1908",
+        "type": "json",
+        "z": "23b3a3db.9fef9c",
+        "name": "",
+        "property": "error.message",
+        "action": "obj",
+        "pretty": false,
+        "x": 310,
+        "y": 140,
+        "wires": [
+            [
+                "4fb7aa9c.7e0d54"
+            ]
+        ]
+    }
+]
