@@ -20,6 +20,7 @@ module.exports = function (RED) {
                 .then(function (ans) {
                     if (ans == "E0" || ans == "E1") {
                         node.error(ans, msg);
+                        node.log(`kv-reader-single.sendCommand ResponseError : ${ans}`);
                     } else {
                         msg.payload = ans;
                         node.send(msg);
@@ -27,6 +28,7 @@ module.exports = function (RED) {
                 })
                 .catch(function (err) {
                     node.error(err, msg);
+                    node.log(`kv-reader-single.sendCommand Error : ${err && err.message ? err.message : err}`);
                 });
         });
     }
