@@ -1,5 +1,6 @@
 module.exports = function (RED) {
     const commons = require("../commons/commons");
+    const util = require('util');
 
     function KVWriterSingle(config) {
         RED.nodes.createNode(this, config);
@@ -14,16 +15,25 @@ module.exports = function (RED) {
         let ip = node.ip;
         let port = node.port;
         node.on("input", function (msg) {
+            try{
+                checkInputMsg(msg);
+            }catch(err){
+                node.error(err,msg);
+                node.log(`kv-writer-single.checkInputMsg : ${err}`);
+                return;
+            }
             let input = msg.payload.data;
             if (node.mode == "WR") {
                 sendCommandMultiple(node, ip, port, input)
                     .then(function (ans) {
                         if (ans != "OK") {
                             node.error(ans, msg);
+                            node.log(`kv-writer-single.sendCommandMultiple ResponseError : ${ans}`);
                         }
                     })
                     .catch(function (err) {
                         node.error(err, msg);
+                        node.log(`kv-writer-single.sendCommandMultiple Error : ${err && err.message ? err.message : err}`);
                     });
             } else {
                 let command = commons.makeCommand(node, input);
@@ -31,10 +41,12 @@ module.exports = function (RED) {
                     .then(function (ans) {
                         if (ans != "OK") {
                             node.error(ans, msg);
+                            node.log(`kv-writer-single.sendCommand ResponseError : ${ans}`);
                         }
                     })
                     .catch(function (err) {
                         node.error(err, msg);
+                        node.log(`kv-writer-single.sendCommand Error : ${err && err.message ? err.message : err}`);
                     });
             }
         });
@@ -52,6 +64,13 @@ module.exports = function (RED) {
         let node = this;
         let targets = node.targets;
         node.on("input", function (msg) {
+            try{
+                checkInputMsg(msg);
+            }catch(err){
+                node.error(err,msg);
+                node.log(`kv-writer-single.checkInputMsg : ${err}`);
+                return;
+            }
             let input = msg.payload.data;
             let errMsg = [];
             Promise
@@ -96,7 +115,13 @@ module.exports = function (RED) {
                     }}))
                 .then(function (ans) {
                     if (errMsg.length > 0) {
-                        node.error(JSON.stringify(errMsg), msg);
+                        const utilOpt = {
+                            depth: Infinity,
+                            breakLength: Infinity,
+                            compact: true,
+                        };
+                        node.error(util.inspect(errMsg,utilOpt), msg);
+                        node.log(`kv-writer-multiple.sendCommand or sendCommandMultiple Error : ${util.inspect(errMsg,utilOpt)}`);
                     }
                 });
         });
@@ -116,5 +141,17 @@ module.exports = function (RED) {
             .catch(function (err) {
                 return Promise.reject(err);
             });
+    }
+
+    function checkInputMsg(msg){
+        if(false == ("payload" in msg)){
+            throw new Error("msg.payload is not exist.");
+        }
+        if(false == ("data" in msg.payload)){
+            throw new Error("msg.payload.data is not exist.");
+        }
+        if(false == (Array.isArray(msg.payload.data))){
+            throw new Error("msg.payload.data is not Array.");
+        }
     }
 };

@@ -9,7 +9,7 @@
     </div>
     <div class="form-row">
         <label for="node-input-port"> Port</label>
-        <input type="text" id="node-input-port" style="width:200px">
+    <input type="number" id="node-input-port" style="width:200px">
     </div>
     <div class="form-row">
         <label for="node-input-mode"> 書込方式</label>
@@ -24,7 +24,7 @@
     </div>
     <div class="form-row">
         <label for="node-input-deviceNo"> デバイス番号</label>
-        <input type="text" id="node-input-deviceNo" style="width:200px">
+    <input type="number" id="node-input-deviceNo" style="width:200px">
     </div>
     <div class="form-row">
         <label for="node-input-dataFormat"> データ形式</label>
@@ -45,11 +45,53 @@
         color: '#72cc82',
         defaults: {
             name: {value:""},
-            ip: {value:""},
-            port:{value:"",},
+            ip: {value:"", label:"IP", required: true, validate: function(v,opt) {
+                // IPv4アドレス形式
+                var ipv4Pattern = /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+                if(false == ipv4Pattern.test(v) && v !== "localhost"){
+                    return KVUtil.createWarningMessage("invalid",{prop:opt.label});
+                }
+                return true;
+            }},
+            port: {value:"", label:"Port", required: true, validate: function(v,opt) {
+                const exponentialNotationPattern = /^[+-]?\d+(\.\d+)?[eE][+-]?\d+$/;
+                const decimalPattern= /^-?\d*\.\d+$/;
+                if(isNaN(parseInt(v))){
+                    return KVUtil.createWarningMessage("not-number",{prop:opt.label});
+                }
+                if(true == exponentialNotationPattern.test(v)){
+                    return KVUtil.createWarningMessage("invalid-exponential-notation",{prop:opt.label});
+                }
+                if(true == decimalPattern.test(v)){
+                    return KVUtil.createWarningMessage("not-integer",{prop:opt.label});
+                }
+                if(parseInt(v) < 1){
+                    return KVUtil.createWarningMessage("number-min",{prop:opt.label,min:1});
+                }
+                if(65535 < parseInt(v)){
+                    return KVUtil.createWarningMessage("number-max",{prop:opt.label,max:65535});
+                }
+                return true;
+            }},
             mode:{value:"WR"},
-            deviceType:{value:""},
-            deviceNo:{value:""},
+            deviceType:{value:"", label:"デバイス種別" ,required: true},
+            deviceNo:{value:"", label:"デバイス番号", required: true, validate: function(v,opt) {
+                const exponentialNotationPattern = /^[+-]?\d+(\.\d+)?[eE][+-]?\d+$/;
+                const decimalPattern= /^-?\d*\.\d+$/;
+                if(isNaN(parseInt(v))){
+                    return KVUtil.createWarningMessage("not-number",{prop:opt.label});
+                }
+                if(true == exponentialNotationPattern.test(v)){
+                    return KVUtil.createWarningMessage("invalid-exponential-notation",{prop:opt.label});
+                }
+                if(true == decimalPattern.test(v)){
+                    return KVUtil.createWarningMessage("not-integer",{prop:opt.label});
+                }
+                if(parseInt(v) < 0){
+                    return KVUtil.createWarningMessage("number-min",{prop:opt.label,min:0});
+                }
+                return true;
+            }},
             dataFormat:{value:""}
         },
         inputs:1,
@@ -63,21 +105,33 @@
 
 <script type="text/html" data-help-name="kv-writer-single">
     <p>デバイスへのデータ書込を行います。</p>
-    
+
     <h3>入力</h3>
         <dl class="message-properties">
             <dt>payload <span class="property-type">オブジェクト</span></dt>
+            <dd> 書込データオブジェクト</dd>
+            <dt>payload.data <span class="property-type">配列</span></dt>
             <dd> 書込データ</dd>
         </dl>
-    
+
     <h3>出力</h3>
         <dl class="message-properties">
             <dd>なし</dd>
         </dl>
-    
+
+    <h3>例外</h3>
+        <p>
+            下記の場合、例外を出力します<br>
+            <ul>
+                <li>メッセージ受信時、メッセージの構成が不正
+                <li>通信時エラー
+                <li>デバイスのレスポンスエラー
+            </ul>
+            出力された例外は、catchノードで取得可能です。
+        </p>
+
     <h3>詳細</h3>
-        <p><code>msg.payload</code>には、<code>data</code>をキーとして書込データ本文を格納して下さい。</p>
-        <p>エラー発生時は、catchノードへエラーを送信します。</p>
+        <p><code>msg.payload.data</code>には書込データ本文を配列として格納して下さい。</p>
 </script>
 
 <script type="text/html" data-template-name="kv-writer-multiple">
@@ -98,7 +152,7 @@
     </div>
     <div class="form-row">
         <label for="node-input-deviceNo"> デバイス番号</label>
-        <input type="text" id="node-input-deviceNo" style="width:200px">
+        <input type="number" id="node-input-deviceNo" style="width:200px">
     </div>
     <div class="form-row">
         <label for="node-input-dataFormat"> データ形式</label>
@@ -118,16 +172,100 @@
 </script>
 
 <script type="text/javascript">
+(function(){
+    function validIP(ip,i){
+        var ret = "";
+        // IPv4アドレス形式
+        var ipv4Pattern = /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+        if(ip===""){
+            ret = `デバイス${i+1}: IPの値が未設定`;
+            return ret;
+        }
+        if(ip !== "localhost" && !ipv4Pattern.test(ip)){
+            ret = `デバイス${i+1}: IPの値が不正`;
+            return ret;
+        }
+        return ret;
+    }
+
+    function validPort(port,i){
+        const exponentialNotationPattern = /^[+-]?\d+(\.\d+)?[eE][+-]?\d+$/;
+        const decimalPattern= /^-?\d*\.\d+$/;
+        var ret = "";
+        if(port === ""){
+            ret = `デバイス${i+1}: Portの値が未設定`;
+            return ret;
+        }
+        if(isNaN(parseInt(port))){
+            ret = `デバイス${i+1}: Portの値が数値ではない`;
+            return ret;
+        }
+        if(true == exponentialNotationPattern.test(port)){
+            ret = `デバイス${i+1}: Portの値が指数表記`;
+            return ret
+        }
+        if(true == decimalPattern.test(port)){
+            ret = `デバイス${i+1}: Portの値が整数ではない`;
+            return ret
+        }
+        if(parseInt(port) < 1){
+            ret = `デバイス${i+1}: Portの値が1より小さい`;
+            return ret;
+        }
+        if (parseInt(port) > 65535) {
+            ret = `デバイス${i+1}: Portの値が65535より大きい`;
+            return ret;
+        }
+        return ret;
+    }
+
     RED.nodes.registerType('kv-writer-multiple',{
         category: 'KV',
         color: '#72cc82',
         defaults: {
             name: {value:""},
             mode:{value:"WR"},
-            deviceType:{value:""},
-            deviceNo:{value:""},
+            deviceType:{value:"", label:"デバイス種別", required: true},
+            deviceNo:{value:"", label:"デバイス番号", required: true, validate: function(v,opt) {
+                const exponentialNotationPattern = /^[+-]?\d+(\.\d+)?[eE][+-]?\d+$/;
+                const decimalPattern= /^-?\d*\.\d+$/;
+                if(isNaN(parseInt(v))){
+                    return KVUtil.createWarningMessage("not-number",{prop:opt.label});
+                }
+                if(true == exponentialNotationPattern.test(v)){
+                    return KVUtil.createWarningMessage("invalid-exponential-notation",{prop:opt.label});
+                }
+                if(true == decimalPattern.test(v)){
+                    return KVUtil.createWarningMessage("not-integer",{prop:opt.label});
+                }
+                if(v < 0){
+                    return KVUtil.createWarningMessage("number-min",{prop:opt.label,min:0});
+                }
+                return true;
+            }},
             dataFormat:{value:""},
-            targets: {value:[{ip:"", port:""}]}
+            targets: {value:[{ip:"", port:""}], validate:function(v,opt) {
+                errors=[];
+                if (!Array.isArray(v) || v.length === 0) {
+                    errors.push("デバイス情報が存在しません。");
+                    return errors;
+                }
+                for (var i = 0; i < v.length; i++) {
+                    var target = v[i];
+                    let retIP = validIP(target.ip,i);
+                    let retPort = validPort(target.port,i);
+                    if(retIP!==""){
+                        errors.push(retIP);
+                    }
+                    if(retPort!==""){
+                        errors.push(retPort);
+                    }
+                }
+                if(errors.length > 0){
+                    return errors;
+                }
+                return true;
+            }}
         },
         inputs:1,
         outputs:0,
@@ -143,38 +281,79 @@
                     header: $('<div/>')
                         .append(
                             $('<div/>', {style:"width:23px; " + headerStyle}),
-                            $('<div/>', {style:inputStyle + headerStyle}).text("IP"), 
+                            $('<div/>', {style:inputStyle + headerStyle}).text("IP"),
                             $('<div/>', {style:inputStyle + headerStyle}).text("Port")
                         ),
                     addItem: function(container, i, opt) {
                         var target = opt;
                         var row = $('<div/>').appendTo(container);
-                        var ip = $('<input/>', 
+                        var ip = $('<input/>',
                             {
-                                class:"node-input-target-ip", 
-                                type:"text", 
+                                class:"node-input-target-ip",
+                                type:"text",
+                                required:true, //リストadd直後のvalidateに必要
                                 style:inputStyle
                             }).appendTo(row);
-                        var port = $('<input/>', 
+                        var port = $('<input/>',
                             {
-                                class:"node-input-target-port", 
-                                type:"text", 
+                                class:"node-input-target-port",
+                                type:"number",
+                                required:true, //リストadd直後のvalidateに必要
                                 style:inputStyle
                             }).appendTo(row);
                         if (typeof target.ip != "undefined") {
                             ip.val(target.ip);
                         }
-                        if (typeof target.ip != "undefined") {
+                        if (typeof target.port != "undefined") {
                             port.val(target.port);
                         }
+                        // editableList入力欄validate赤枠付与処理
+                        ip.on("input",function(){
+                            let ip = this.value;
+                            let ret = validIP(ip);
+                            if (ret!=="") {
+                                $(this).addClass("input-error");
+                            }else{
+                                $(this).removeClass("input-error");
+                            }
+                        });
+                        port.on("input",function(){
+                            let port = this.value;
+                            let ret = validPort(port);
+                            if (ret!=="") {
+                                $(this).addClass("input-error");
+                            }else{
+                                $(this).removeClass("input-error");
+                            }
+                        });
                     },
                     sortable: true,
                     removable: true
                 })
-            
+
             for (var i = 0; i < this.targets.length; i++) {
                 $("#node-input-target-container").editableList('addItem', this.targets[i]);
             }
+
+            // ダイアログを開いた直後のeditableList入力欄validate赤枠付与処理(on("input")では開いた直後は対象外のため)
+            let items = $("#node-input-target-container").editableList('items');
+            items.each(function(i){
+                let ipInput = $(this).find(".node-input-target-ip");
+                let portInput = $(this).find(".node-input-target-port");
+                let retIP = validIP(ipInput.val());
+                let retPort = validPort(portInput.val());
+                if(retIP!=="") {
+                    ipInput.addClass("input-error");
+                }
+                else{
+                    ipInput.removeClass("input-error");
+                }
+                if(retPort!==""){
+                    portInput.addClass("input-error");
+                }else{
+                    portInput.removeClass("input-error");
+                }
+            });
         },
         oneditsave: function() {
             var targets = $("#node-input-target-container").editableList('items');
@@ -198,23 +377,36 @@
             $("#node-input-target-container").editableList('height', height);
         }
     });
+})();
 </script>
 
 <script type="text/html" data-help-name="kv-writer-multiple">
     <p>複数デバイスへのデータ書込を行います。</p>
-    
+
     <h3>入力</h3>
         <dl class="message-properties">
             <dt>payload <span class="property-type">オブジェクト</span></dt>
+            <dd> 書込データオブジェクト</dd>
+            <dt>payload.data <span class="property-type">配列</span></dt>
             <dd> 書込データ</dd>
         </dl>
-    
+
     <h3>出力</h3>
         <dl class="message-properties">
             <dd>なし</dd>
         </dl>
-    
+
+    <h3>例外</h3>
+        <p>
+            下記の場合、例外を出力します<br>
+            <ul>
+                <li>メッセージ受信時、メッセージの構成が不正
+                <li>通信時エラー
+                <li>デバイスのレスポンスエラー
+            </ul>
+            出力された例外は、catchノードで取得可能です。
+        </p>
+
     <h3>詳細</h3>
-        <p><code>msg.payload</code>には、<code>data</code>をキーとして書込データ本文を格納して下さい。</p>
-        <p>エラー発生時は、catchノードへエラーを送信します。</p>
+        <p><code>msg.payload.data</code>には書込データ本文を配列として格納して下さい。</p>
 </script>

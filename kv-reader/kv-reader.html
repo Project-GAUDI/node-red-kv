@@ -1,3 +1,4 @@
+<script src="resources/node-red-kv/util.js"></script>
 <script type="text/html" data-template-name="kv-reader-single">
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> 名前</label>
@@ -9,7 +10,7 @@
     </div>
     <div class="form-row">
         <label for="node-input-port"> Port</label>
-        <input type="text" id="node-input-port" style="width:200px">
+    <input type="number" id="node-input-port" style="width:200px">
     </div>
     <div class="form-row">
         <label for="node-input-mode"> 読出方式</label>
@@ -24,7 +25,7 @@
     </div>
     <div class="form-row">
         <label for="node-input-deviceNo"> デバイス番号</label>
-        <input type="text" id="node-input-deviceNo" style="width:200px">
+    <input type="number" id="node-input-deviceNo" style="width:200px">
     </div>
     <div class="form-row">
         <label for="node-input-dataFormat"> データ形式</label>
@@ -39,7 +40,7 @@
     </div>
     <div class="form-row">
         <label for="node-input-readNo"> 読出個数</label>
-        <input type="text" id="node-input-readNo" style="width:200px">
+    <input type="number" id="node-input-readNo" style="width:200px">
     </div>
 </script>
 
@@ -49,39 +50,127 @@
         color: '#72cc82',
         defaults: {
             name: {value:""},
-            ip: {value:""},
-            port:{value:""},
-            mode:{value:"RD"},
-            deviceType:{value:""},
-            deviceNo:{value:""},
-            dataFormat:{value:""},
-            readNo:{value:""}
+            ip: {value:"", label:"IP", required: true, validate: function(v,opt) {
+                // IPv4アドレス形式
+                const ipv4Pattern = /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+                if(false == ipv4Pattern.test(v) && v !== "localhost"){
+                    return KVUtil.createWarningMessage("invalid",{prop:opt.label});
+                }
+                return true;
+            }},
+            port: {value:"",label:"Port", required: true, validate: function(v,opt) {
+                // 指数表記
+                const exponentialNotationPattern = /^[+-]?\d+(\.\d+)?[eE][+-]?\d+$/;
+                const decimalPattern= /^-?\d*\.\d+$/;
+                if(isNaN(parseInt(v))){
+                    return KVUtil.createWarningMessage("not-number",{prop:opt.label});
+                }
+                if(true == exponentialNotationPattern.test(v)){
+                    return KVUtil.createWarningMessage("invalid-exponential-notation",{prop:opt.label});
+                }
+                if(true == decimalPattern.test(v)){
+                    return KVUtil.createWarningMessage("not-integer",{prop:opt.label});
+                }
+                if(parseInt(v) < 1){
+                    return KVUtil.createWarningMessage("number-min",{prop:opt.label,min:1});
+                }
+                if(65535 < parseInt(v)){
+                    return KVUtil.createWarningMessage("number-max",{prop:opt.label,max:65535});
+                }
+                return true;
+            }},
+            mode: {value:"RD"},
+            deviceType: {value:"", label:"デバイス種別", required: true},
+            deviceNo: {value:"", label:"デバイス番号", required: true, validate: function(v,opt) {
+                const exponentialNotationPattern = /^[+-]?\d+(\.\d+)?[eE][+-]?\d+$/;
+                const decimalPattern= /^-?\d*\.\d+$/;
+                if(isNaN(parseInt(v))){
+                    return KVUtil.createWarningMessage("not-number",{prop:opt.label});
+                }
+                if(true == exponentialNotationPattern.test(v)){
+                    return KVUtil.createWarningMessage("invalid-exponential-notation",{prop:opt.label});
+                }
+                if(true == decimalPattern.test(v)){
+                    return KVUtil.createWarningMessage("not-integer",{prop:opt.label});
+                }
+                if(parseInt(v) < 0){
+                    return KVUtil.createWarningMessage("number-min",{prop:opt.label,min:0});
+                }
+                return true;
+            }},
+            dataFormat: {value:""},
+            readNo: {value:"",label:"読出個数", validate: function(v,opt) {
+                const exponentialNotationPattern = /^[+-]?\d+(\.\d+)?[eE][+-]?\d+$/;
+                const decimalPattern= /^-?\d*\.\d+$/;
+                var mode = $("#node-input-mode").val() || this.mode;
+                if (mode === "RDS") {
+                    if(v===""){
+                        return KVUtil.createWarningMessage("not-set-required",{prop:opt.label});
+                    }
+                    if(isNaN(parseInt(v))){
+                        return KVUtil.createWarningMessage("not-number",{prop:opt.label});
+                    }
+                    if(true == exponentialNotationPattern.test(v)){
+                        return KVUtil.createWarningMessage("invalid-exponential-notation",{prop:opt.label});
+                    }
+                    if(true == decimalPattern.test(v)){
+                        return KVUtil.createWarningMessage("not-integer",{prop:opt.label});
+                    }
+                    if(parseInt(v) < 1){
+                    return KVUtil.createWarningMessage("number-min",{prop:opt.label,min:1});
+                    }
+                }
+                return true;
+            }}
         },
         inputs:1,
         outputs:1,
         icon: "font-awesome/fa-book",
         label: function() {
             return this.name;
+        },
+        oneditprepare: function() {
+            var node = this;
+
+            let mode = $("#node-input-mode");
+            mode.on("change", function(){
+                let mode = this.value;
+                let readNo = $("#node-input-readNo").closest(".form-row");
+                if(mode === "RD"){
+                    readNo.hide();
+                }else{
+                    readNo.show();
+                }
+            });
         }
     });
 </script>
 
 <script type="text/html" data-help-name="kv-reader-single">
     <p>デバイスからのデータ読出を行います。</p>
-    
+
     <h3>入力</h3>
         <dl class="message-properties">
             <dd>指定なし</dd>
         </dl>
-    
+
     <h3>出力</h3>
         <dl class="message-properties">
             <dt>payload<span class="property-type">文字列</span></dt>
             <dd>読出データ</dd>
         </dl>
-    
+
+    <h3>例外</h3>
+        <p>
+            下記の場合、例外を出力します<br>
+            <ul>
+                <li>通信時エラー
+                <li>デバイスのレスポンスエラー
+            </ul>
+            出力された例外は、catchノードで取得可能です。
+        </p>
+
     <h3>詳細</h3>
         <p><code>msg.payload</code>には、デバイスから読出したデータがそのまま格納されます。
             そのため、後続ノードにてデータの分割や結合を行って下さい。</p>
-        <p>エラー発生時は、catchノードへエラーを送信します。</p>
 </script>

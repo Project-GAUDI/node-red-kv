@@ -46,6 +46,9 @@ function sendMessage(node, ip, port, command) {
             node.log("Command sent.");
         });
 
+        // タイムアウトを10秒に設定
+        client.setTimeout(10000);
+
         client.on("data", function (data) {
             let ans = data.toString().replace("\r\n", "");
             node.log(`Received Response. (${ans})`);
@@ -54,7 +57,15 @@ function sendMessage(node, ip, port, command) {
         });
 
         client.on("error", function (err) {
+            node.log(`Connection error occurred: ${err.message}`);
+            client.destroy();
             reject(err);
+        });
+
+        client.on("timeout", function () {
+            node.log("Connection timeout occurred");
+            client.destroy();
+            reject(new Error("Connection timeout"));
         });
     });
 }
